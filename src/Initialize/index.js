@@ -1,38 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import Navigation from '../components/Navigation';
+import Routes from '../routes/index';
+import SignIn from '../views/SignIn';
+import { getAllPlayers } from '../api/data/playerData';
 
 function Initialize() {
-  const [domWriting, setDomWriting] = useState('Nothing Here!');
+  const [user, setUser] = useState(null);
+  const [players, setPlayers] = useState([]);
+  const [editItem, setEditItem] = useState({});
 
-  const handleClick = (e) => {
-    console.warn(`You clicked ${e.target.id}`);
-    setDomWriting(`You clicked ${e.target.id}! Check the Console!`);
-  };
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged((authed) => {
+      if (authed) {
+        const userObj = {
+          fullName: authed.displayName,
+          profileImage: authed.photoURL,
+          uid: authed.uid,
+        };
+        setUser(userObj);
+        getAllPlayers().then(setPlayers);
+      } else if (user || user === null) {
+        setUser(false);
+      }
+    });
+  }, []);
 
   return (
-    <div className="App">
-      <h2>INSIDE APP COMPONENT</h2>
-      <div>
-        <button
-          type="button"
-          id="this-button"
-          className="btn btn-info"
-          onClick={handleClick}
-        >
-          I am THIS button
-        </button>
-      </div>
-      <div>
-        <button
-          type="button"
-          id="that-button"
-          className="btn btn-primary mt-3"
-          onClick={handleClick}
-        >
-          I am THAT button
-        </button>
-      </div>
-      <h3>{domWriting}</h3>
-    </div>
+    <>
+      {user ? (
+        <>
+          <Navigation />
+          <Routes
+            user={user}
+            players={players}
+            player={editItem}
+            setEditItem={setEditItem}
+          />
+        </>
+      ) : (
+        <SignIn user={user} />
+      )}
+    </>
   );
 }
 
